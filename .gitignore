@@ -1,0 +1,21 @@
+# Ignore virtual environment
+.venv/
+.venv/*
+
+# Ignore VSCode settings
+.vscode/
+.vscode/*
+
+# Ignore Python cache files
+__pycache__/
+*.py[cod]
+
+# Ignore other common files
+*.log
+*.tmp
+*.bak
+
+# Ignore Audio files
+Audio/*
+audios/*
+videos/*
