@@ -16,6 +16,6 @@ __pycache__/
 *.bak
 
 # Ignore Audio files
-Audio/*
 audios/*
 videos/*
+transcriptions/*
