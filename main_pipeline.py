@@ -3,16 +3,21 @@ import sys
 from pydub import AudioSegment
 from pathlib import Path
 import math
+from google.cloud.storage import Client, transfer_manager
+from google.cloud import speech
+from datetime import timedelta
 
 from pipeline import Pipeline
 
 
 SEGMENT_LENGTH = 15*60*1000  # 15 minutes in milliseconds
+GCP_BUCKET = 'seminario_hamlet' # Name of the GCP bucket
+GCP_PROJECT = 'transcriptor-449915'  # Name of the GCP project
 PATH_AUDIO = 'audios/'  # Path where the audio files are located
 PATH_TRANSCRIPTION = 'transcriptions/'  # Path where the transcriptions will be saved
 os.makedirs(PATH_AUDIO, exist_ok=True)
 os.makedirs(PATH_TRANSCRIPTION, exist_ok=True)
-
+os.environ.setdefault("GCLOUD_PROJECT", GCP_PROJECT)
 
 pipeline = Pipeline()
 
@@ -59,6 +64,64 @@ def split_audio(file_path):
         # Export the segment as an m4a file
         segment.export(output_file, format="flac") 
         print(f"Exported: {output_file}")
+    return original_path
+
+
+@pipeline.task(depends_on=split_audio)
+def upload_to_bucket(source_directory):
+    """Upload every file in a directory, including all files in subdirectories.
+
+    Each blob name is derived from the filename, not including the `directory`
+    parameter itself. For complete control of the blob name for each file (and
+    other aspects of individual blob metadata), use
+    transfer_manager.upload_many() instead.
+    """
+
+    bucket_name = GCP_BUCKET
+    workers = 8
+
+    storage_client = Client()
+    bucket = storage_client.bucket(bucket_name)
+
+    # Generate a list of paths (in string form) relative to the `directory`.
+    # This can be done in a single list comprehension, but is expanded into
+    # multiple lines here for clarity.
+
+    # First, recursively get all files in `directory` as Path objects.
+    directory_as_path_obj = Path(source_directory)
+    paths = directory_as_path_obj.rglob("*")
+
+    # Filter so the list only includes files, not directories themselves.
+    file_paths = [path for path in paths if path.is_file()]
+
+    # These paths are relative to the current working directory. Next, make them
+    # relative to `directory`
+    relative_paths = [path.relative_to(source_directory) for path in file_paths]
+
+    # Finally, convert them all to strings.
+    string_paths = [str(path) for path in relative_paths]
+
+    print("Found {} files.".format(len(string_paths)))
+
+    # Start the upload.
+    results = transfer_manager.upload_many_from_filenames(
+        bucket, string_paths, source_directory=source_directory, max_workers=workers
+    )
+
+    for name, result in zip(string_paths, results):
+        # The results list is either `None` or an exception for each filename in
+        # the input list, in order.
+
+        if isinstance(result, Exception):
+            print("Failed to upload {} due to exception: {}".format(name, result))
+        else:
+            print("Uploaded {} to {}.".format(name, bucket.name))
+    return source_directory
+
+
+@pipeline.task(depends_on=upload_to_bucket)
+def transcribe_from_bucket():
+    pass
 
 
 if __name__ == '__main__':
