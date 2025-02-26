@@ -159,7 +159,6 @@ def transcribe_gcs(gcs_uri: str) -> str:
     config = speech.RecognitionConfig(
         encoding=speech.RecognitionConfig.AudioEncoding.FLAC,
         language_code="es-AR",
-        alternative_language_codes=["en-US", "en-GB"],
         enable_word_time_offsets=True,
         enable_automatic_punctuation=True,
         # diarization_config=diarization_config,
