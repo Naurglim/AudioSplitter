@@ -158,13 +158,12 @@ def transcribe_gcs(gcs_uri: str) -> str:
     )
     config = speech.RecognitionConfig(
         encoding=speech.RecognitionConfig.AudioEncoding.FLAC,
-        sample_rate_hertz=16000, # 44100
         language_code="es-AR",
         alternative_language_codes=["en-US", "en-GB"],
         enable_word_time_offsets=True,
         enable_automatic_punctuation=True,
         # diarization_config=diarization_config,
-        # audio_channel_count=2,
+        audio_channel_count=2,
     )
     operation = client.long_running_recognize(config=config, audio=audio, timeout=3600)
 
