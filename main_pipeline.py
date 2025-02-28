@@ -129,7 +129,7 @@ def transcribe_from_bucket(source_directory : str, bucket_name : str = GCP_BUCKE
         gcs_file = f"gs://{bucket_name}/{audio_filename}"
         transcription_path = Path(PATH_TRANSCRIPTION) / bucket_name
         transcription_path.mkdir(parents=True, exist_ok=True)
-        transcription_file = f"transcriptions/{bucket_name}/{text_filename}"
+        transcription_file = f"transcriptions/{bucket_name}/{archivo}/{text_filename}"
         transcript = transcribe_gcs(gcs_file)
         to_file(transcription_file, transcript)
 
@@ -194,7 +194,7 @@ def transcribe_gcs(gcs_uri: str) -> str:
 
         # list_speakers = ", ".join([str(speaker) for speaker in speakers])
         str_time = str(timedelta(seconds=part_start_time))
-        transcript_builder.append(f"\n{str_time}\n{best_option.transcript}")
+        transcript_builder.append(f"\n\nStart: {str_time} - Confidence: {best_option.confidence}\n{best_option.transcript}")
 
     transcript = "".join(transcript_builder)
 
@@ -202,6 +202,8 @@ def transcribe_gcs(gcs_uri: str) -> str:
 
 
 def to_file(file_name: str, content: str) -> None:
+    file_name_path = Path(file_name)
+    file_name_path.parent.mkdir(parents=True, exist_ok=True)
     with open(file_name, "w") as file:
         file.write(content)
    
