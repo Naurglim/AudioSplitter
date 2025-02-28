@@ -125,7 +125,7 @@ def transcribe_from_bucket(source_directory: str, bucket_name: str = GCP_BUCKET)
     for part in range(1, MAX_SEGMENTS + 1):
         text_filename = f"{archivo}_part{part:02d}.txt"
         audio_filename = f"{archivo}_part{part:02d}.flac"
-        if not file_exists(bucket_name, audio_filename):
+        if not gcs_file_exists(bucket_name, audio_filename):
             print(f"Couldn't find file {audio_filename}")
             break
 
@@ -137,7 +137,7 @@ def transcribe_from_bucket(source_directory: str, bucket_name: str = GCP_BUCKET)
         to_file(transcription_file, transcript)
 
 
-def file_exists(bucket_name: str, file_name: str) -> bool:
+def gcs_file_exists(bucket_name: str, file_name: str) -> bool:
     """
     Check if a file exists in a Google Cloud Storage bucket.
 
